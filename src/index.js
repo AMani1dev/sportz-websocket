@@ -3,6 +3,7 @@ import { matchRouter } from "./routes/matches.js";
 
 import { attachWebSocketServer } from "./ws/server.js";
 import http from "http"
+import { securityMiddleware } from "./arcject.js";
 
 const PORT = Number(process.env.PORT || 8000); 
 const HOST = process.env.HOST || '0.0.0.0';
@@ -17,7 +18,11 @@ app.get("/", (req, res) => {
   res.send("  hello from express server");
 });
 
+app.use(securityMiddleware())
+
 app.use("/matches", matchRouter)
+
+
 
 const {broadcastMatchCreated} = attachWebSocketServer(server)
 
