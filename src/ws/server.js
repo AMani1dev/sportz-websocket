@@ -1,4 +1,5 @@
 import {WebSocket, WebSocketServer} from 'ws';
+import { wsArcjet } from '../arcject.js';
 // import {wsArcjet} from "../arcjet.js";
 
 // const matchSubscribers = new Map();
@@ -169,7 +170,26 @@ function broadcastToAll(wss, payload) {
 export function attachWebSocketServer(server) {
     const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 1024 * 1024 });
 
-        wss.on('connection', async (socket) => {
+        wss.on('connection', async (socket, req) => {
+
+            if(wsArcjet) {
+                try {
+                    const decision = await wsArcjet.protect(req);
+
+                    if(decision.isDenied()) {
+                        // 1013 try again later rate limited
+                        // 1008 policy violation like bot detecting
+                       const code = decision.reason.isRateLimit() ? 1013 : 1008;
+                       const reason = decision.reason.isRateLimit() ? "rate limit exceeded" : "access denied" ;
+                       socket.close(code, reason)
+                    }
+
+                }catch(e) {
+                    console.error("ws connection error", e)
+                    // 1011 general error
+                    socket.close("1011", 'server security error')
+                }
+            }
         socket.isAlive = true;
         socket.on('pong', () => { socket.isAlive = true; });
 
