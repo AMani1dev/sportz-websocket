@@ -120,36 +120,36 @@ function broadcastToAll(wss, payload) {
 //         });
 //     });
 
-//     wss.on('connection', async (socket, req) => {
-//         socket.isAlive = true;
-//         socket.on('pong', () => { socket.isAlive = true; });
+    // wss.on('connection', async (socket, req) => {
+    //     socket.isAlive = true;
+    //     socket.on('pong', () => { socket.isAlive = true; });
 
-//         socket.subscriptions = new Set();
+    //     socket.subscriptions = new Set();
 
-//         sendJson(socket, { type: 'welcome' });
+    //     sendJson(socket, { type: 'welcome' });
 
-//         socket.on('message', (data) => {
-//             handleMessage(socket, data);
-//         });
+    //     socket.on('message', (data) => {
+    //         handleMessage(socket, data);
+    //     });
 
-//         socket.on('error', () => {
-//             socket.terminate();
-//         });
+    //     socket.on('error', () => {
+    //         socket.terminate();
+    //     });
 
-//         socket.on('close', () => {
-//             cleanupSubscriptions(socket);
-//         })
+    //     socket.on('close', () => {
+    //         cleanupSubscriptions(socket);
+    //     })
 
-//         socket.on('error', console.error);
-//     });
+    //     socket.on('error', console.error);
+    // });
 
-//     const interval = setInterval(() => {
-//         wss.clients.forEach((ws) => {
-//             if (ws.isAlive === false) return ws.terminate();
+    // const interval = setInterval(() => {
+    //     wss.clients.forEach((ws) => {
+    //         if (ws.isAlive === false) return ws.terminate();
 
-//             ws.isAlive = false;
-//             ws.ping();
-//         })}, 30000);
+    //         ws.isAlive = false;
+    //         ws.ping();
+    //     })}, 30000);
 
 //     wss.on('close', () => clearInterval(interval));
 
@@ -169,12 +169,25 @@ function broadcastToAll(wss, payload) {
 export function attachWebSocketServer(server) {
     const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 1024 * 1024 });
 
-    wss.on('connection', (socket) => {
+        wss.on('connection', async (socket) => {
+        socket.isAlive = true;
+        socket.on('pong', () => { socket.isAlive = true; });
 
         sendJson(socket, { type: 'welcome' });
 
         socket.on('error', console.error);
     });
+
+    
+    const interval = setInterval(() => {
+        wss.clients.forEach((ws) => {
+            if (ws.isAlive === false) return ws.terminate();
+
+            ws.isAlive = false;
+            ws.ping();
+        })}, 30000);
+
+    wss.on('close', () => clearInterval(interval));
 
 
     function broadcastMatchCreated(match) {
